@@ -97,7 +97,7 @@ python3 queue_t2v_int4.py
 | **INT8 DiT 블록 스트림** | 4B TE + INT8 DiT, 트랜스포머 블록 1개씩 (`pread` + `F_NOCACHE` + prefetch) | DiT 상주 **1.5GB** (20GB 아님). 스텝당 ~190–225초, I/O ~2초. RMSNorm(`q_norm`)을 버리면 step 2에서 죽음. |
 | **INT8 32B TE 레이어 스트림 + INT8 DiT 블록 스트림** | 공식 32B INT8 TE(~27GB 파일) 50 레이어 스트림 후 INT8 DiT 블록 스트림 | TE 상주 **2.6GB**, 인코딩 ~21초. DiT **1.5GB**. **20/20 + SaveVideo 01:16:57.** 24GB에서 추천 경로. |
 | **Sage Attention → Metal flash** | CUDA Sage는 Mac 불가. `vendor/sageattention` 심 + `--use-sage-attention` → `mtlflashattn` | 훅은 동작. 2-step 스모크 **193s / 212s**, sub-quad **196s / 214s**. **스텝 시간 이득 없음.** 병목은 attention이 아니라 INT8 Linear / 블록 스트림. packed 토큰 ~1.5만에서 flash 수치 안정성 때문에 플래그는 유지. |
-| **INT4 32B TE + INT4 DiT** | 커뮤니티 ConvRot TE (`Merserk`, 레이어 스트림) + pruned INT4 DiT 풀로드 (~10.8GB), sage flash, INT4 Metal 커널 끔 | 2-step **완료.** TE 상주 **2.6GB**, 인코딩 **34s**. DiT **10808 MB**. **143s / ~164s**, 평균 **154s/it**. INT8 스트림(~217s)보다 빠름 (DiT가 상주). 20-step 진행 중. |
+| **INT4 32B TE + INT4 DiT** | 커뮤니티 ConvRot TE (`Merserk`, 레이어 스트림) + pruned INT4 DiT 풀로드 (~10.8GB) | 2-step **완료** (~154s/it). 20-step은 **16/20에서 중단** (~191s/step, INT8보다 ~12% 빠름). **INT8로 복귀** — 속도 이득이 양자화 손실 대비 작음. |
 
 ### 실패한 것 (다시 하지 말 것)
 
@@ -114,9 +114,9 @@ python3 queue_t2v_int4.py
 
 ### 진행 중 / 다음
 
-- **INT4 32B TE + INT4 DiT 20-step** 진행 중 (`queue_t2v_int4_te_dit.py`, prompt `5a1bc3ba`). 2-step은 이미 성공 (~154s/step). tmux `minimax-comfy-int4-te` 를 죽이지 말 것.
-- **LightX2V 8-step Turbo LoRA** 는 디스크에 있음 (`models/loras/`). 큐 그래프에는 아직 안 넣음. 이 INT4 경로면 8 × ~154s ≈ 20분.
-- INT4 Metal 커널 (`ASFP8_INT4_EXT=1`) 은 INT4 경로의 스텝 시간용. 24GB 상주 문제와는 무관.
+- **INT8 유지** (`queue_t2v_int8_te_blockstream.py`). INT4 TE+DiT는 측정 후 폐기.
+- **LightX2V 8-step Turbo LoRA** 는 디스크에 있음 (`models/loras/`). 큐 그래프에는 아직 안 넣음. 기대: 20스텝 → 8스텝, ~1시간 17분 → 스텝 ~217초면 약 25–30분.
+- INT4 Metal 커널 (`ASFP8_INT4_EXT=1`) 은 사용하지 않음. INT4 경로를 쓰지 않음.
 
 ## 💡 성능 최적화 팁 (향후 과제)
 현재 파이프라인으로 생성 시 약 **1시간 12분 (20스텝 기준)**이 소요됩니다. Sage Attention으로는 줄지 않았습니다. 남은 레버:
