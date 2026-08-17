@@ -61,10 +61,13 @@ Since we are bypassing the standard ComfyUI frontend for extreme memory manageme
 # 32B INT8 TE + INT8 DiT (Recommended for 24GB Streaming)
 python3 queue_t2v_int8_te_blockstream.py
 
+# 32B INT4 TE + INT4 DiT (layer-stream TE, full-load DiT ~11GB)
+python3 queue_t2v_int4_te_dit.py
+
 # 4B Krea-2 TE + INT8 DiT (Alternative lightweight encoder)
 python3 queue_t2v_int8_blockstream.py
 
-# INT4 DiT Full Load (If testing the 11.3GB INT4 DiT directly in memory)
+# INT4 DiT Full Load with 4B ClipProj TE
 python3 queue_t2v_int4.py
 ```
 - The final `.mp4` video will be saved in `ComfyUI/output/video/`.
@@ -77,7 +80,7 @@ python3 queue_t2v_int4.py
 | --- | --- | --- |
 | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` | `models/diffusion_models/` | Main DiT (INT8, ~20GB) |
 | `minimax_h3_fl2va_pruned_int4_convrot.safetensors` | `models/diffusion_models/` | Main DiT (INT4, ~11.3GB) |
-| `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` | `models/text_encoders/` | Official 32B TE (INT8, ~27GB) |
+| `qwen3vl_32b_minimax_h3_int4_convrot.safetensors` | `models/text_encoders/` | 32B TE (INT4 ConvRot, Merserk, ~15GB). Layer-stream; do not full-load |
 | `qwen3vl_4b_fp8_scaled.safetensors` | `models/text_encoders/` | Lightweight 4B TE alternative |
 | `minimax_h3_video_vae_fp16.safetensors` | `models/vae/` | Video Decode |
 | `minimax_h3_audio_vae_fp32.safetensors` | `models/vae/` | Audio Decode |
@@ -114,6 +117,7 @@ All timings below are **864×480, 5s (124 frames), seed 42**, unless noted. Offi
 
 ### In progress / next
 
+- **INT4 32B TE + INT4 DiT:** `queue_t2v_int4_te_dit.py`. TE is community ConvRot (`Merserk`, 14952506624 bytes) with the same layer-stream hook as INT8. DiT full-loads (~10.8 GB); auto block-stream stays INT8-only. INT4 Metal kernel stays off (attempt 9). Header smoke passed (50 layers, ~233 MB/layer). Comfy 2-step encode+sample next.
 - **LightX2V 8-step Turbo LoRA** is on disk (`models/loras/`). Not inserted into the queue graph yet. Expected: 20 steps → 8, ~1h12 → ~25–30 min if step time stays ~215s.
 - INT4 Metal kernel (`ASFP8_INT4_EXT=1`) is a step-time experiment on the INT4 path only; it does not change the 24GB residency story.
 

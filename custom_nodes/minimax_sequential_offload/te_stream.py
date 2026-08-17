@@ -1,9 +1,10 @@
-"""Stream MiniMax H3 32B INT8 TE layers from safetensors.
+"""Stream MiniMax H3 32B INT8 / INT4 TE layers from safetensors.
 
-The official INT8 ConvRot encoder is ~27GB. 24GB unified memory cannot
-reside it. Same idea as DiT block-stream: keep embeddings + vision tower
-resident (~2GB) and, for each TransformerBlock.forward, pread that LM
-layer, compute, then drop the large Linear weights.
+The official INT8 ConvRot encoder is ~27GB; the community INT4 ConvRot
+TE is ~15GB. 24GB unified memory cannot reside either. Same idea as DiT
+block-stream: keep embeddings + vision tower resident (~2GB) and, for
+each TransformerBlock.forward, pread that LM layer, compute, then drop
+the large Linear weights.
 
 T2V does not use the vision tower; it still sits in RAM (~1.1GB BF16).
 After encode, sequential_offload drops the whole TE before DiT runs.
@@ -47,8 +48,8 @@ def should_te_block_stream(clip_path: str) -> bool:
         return False
     if mode in ("1", "on", "true", "yes"):
         return True
-    # auto: official 32B INT8 ConvRot. NVFP4 (~15GB) still full-loads.
-    return "int8" in name
+    # auto: 32B INT8 (~27GB) and INT4 ConvRot (~15GB). NVFP4 still full-loads.
+    return "int8" in name or "int4" in name
 
 
 def _te_layers(clip):

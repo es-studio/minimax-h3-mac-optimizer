@@ -42,8 +42,9 @@ export MINIMAX_DIT_BLOCK_STREAM="${MINIMAX_DIT_BLOCK_STREAM:-auto}"
 export MINIMAX_DIT_BLOCK_PREFETCH="${MINIMAX_DIT_BLOCK_PREFETCH:-1}"
 echo "MINIMAX_DIT_BLOCK_STREAM=${MINIMAX_DIT_BLOCK_STREAM} prefetch=${MINIMAX_DIT_BLOCK_PREFETCH}"
 
-# Official 32B INT8 TE (~27GB) is the same idea: one LM layer at a time.
-# auto = qwen3vl_32b + int8. ClipProj 4B is unchanged. NVFP4 still full-loads.
+# Official 32B INT8 TE (~27GB) and INT4 ConvRot TE (~15GB): one LM layer
+# at a time. auto = qwen3vl_32b + (int8|int4). ClipProj 4B unchanged.
+# NVFP4 still full-loads.
 export MINIMAX_TE_BLOCK_STREAM="${MINIMAX_TE_BLOCK_STREAM:-auto}"
 export MINIMAX_TE_BLOCK_PREFETCH="${MINIMAX_TE_BLOCK_PREFETCH:-1}"
 echo "MINIMAX_TE_BLOCK_STREAM=${MINIMAX_TE_BLOCK_STREAM} prefetch=${MINIMAX_TE_BLOCK_PREFETCH}"

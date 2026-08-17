@@ -57,10 +57,13 @@ cd /Users/eunsung/minimax
 # 32B INT8 TE + INT8 DiT (가장 추천하는 24GB 스트리밍 파이프라인)
 python3 queue_t2v_int8_te_blockstream.py
 
+# 32B INT4 TE + INT4 DiT (TE 레이어 스트림, DiT ~11GB 풀로드)
+python3 queue_t2v_int4_te_dit.py
+
 # 4B Krea-2 TE + INT8 DiT (가벼운 인코더 대안)
 python3 queue_t2v_int8_blockstream.py
 
-# INT4 DiT 풀로드 (약 11.3GB 통째 로드 시연)
+# INT4 DiT 풀로드 + 4B ClipProj TE
 python3 queue_t2v_int4.py
 ```
 - 실행 결과 MP4 비디오 파일은 `ComfyUI/output/video/` 디렉토리에 저장됩니다.
@@ -73,7 +76,7 @@ python3 queue_t2v_int4.py
 | --- | --- | --- |
 | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` | `models/diffusion_models/` | 메인 DiT (INT8, ~20GB) |
 | `minimax_h3_fl2va_pruned_int4_convrot.safetensors` | `models/diffusion_models/` | 메인 DiT (INT4, ~11.3GB) |
-| `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` | `models/text_encoders/` | 공식 32B TE (INT8, ~27GB) |
+| `qwen3vl_32b_minimax_h3_int4_convrot.safetensors` | `models/text_encoders/` | 커뮤니티 32B TE (INT4 ConvRot, Merserk, ~15GB). 풀로드 금지, 레이어 스트림 |
 | `qwen3vl_4b_fp8_scaled.safetensors` | `models/text_encoders/` | 4B 가벼운 TE 대안 |
 | `minimax_h3_video_vae_fp16.safetensors` | `models/vae/` | 비디오 디코드 공통 |
 | `minimax_h3_audio_vae_fp32.safetensors` | `models/vae/` | 오디오 디코드 공통 |
@@ -110,6 +113,7 @@ python3 queue_t2v_int4.py
 
 ### 진행 중 / 다음
 
+- **INT4 32B TE + INT4 DiT:** `queue_t2v_int4_te_dit.py`. TE는 커뮤니티 ConvRot (`Merserk`, 14952506624 bytes), INT8과 같은 레이어 스트림. DiT는 풀로드 (~10.8 GB). 블록 스트림 auto는 INT8만. INT4 Metal 커널은 끔 (시도 9). 헤더 스모크 통과 (50 레이어, ~233 MB/레이어). 다음은 Comfy 2-step.
 - **LightX2V 8-step Turbo LoRA** 는 디스크에 있음 (`models/loras/`). 큐 그래프에는 아직 안 넣음. 기대: 20스텝 → 8스텝, ~1시간 12분 → 스텝 시간이 ~215초로 남으면 약 25–30분.
 - INT4 Metal 커널 (`ASFP8_INT4_EXT=1`) 은 INT4 경로의 스텝 시간용. 24GB 상주 문제와는 무관.
 
