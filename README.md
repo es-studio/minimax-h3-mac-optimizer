@@ -101,6 +101,7 @@ All timings below are **864×480, 5s (124 frames), seed 42**, unless noted. Offi
 | **INT8 DiT block-stream** | 4B TE + INT8 DiT, one transformer block at a time (`pread` + `F_NOCACHE` + prefetch) | DiT resident **1.5GB** instead of 20GB. ~190–225s/step, I/O ~2s. Do not drop RMSNorm (`q_norm`) or step 2 dies. |
 | **INT8 32B TE layer-stream + INT8 DiT block-stream** | Official 32B INT8 TE (~27GB file), 50 LM layers streamed; then INT8 DiT block-stream | TE resident **2.6GB**, encode ~21s. DiT **1.5GB**. **20/20 + SaveVideo in 01:16:57.** This is the recommended 24GB path. |
 | **Sage Attention → Metal flash** | CUDA SageAttention cannot install on Mac. `vendor/sageattention` shim + `--use-sage-attention` → `mtlflashattn` | Hook works. 2-step smoke: **193s / 212s** vs sub-quad **196s / 214s**. **No step-time win** — bottleneck is INT8 Linear / block-stream, not attention. Flag stays on for flash correctness at ~15k packed tokens. |
+| **INT4 32B TE + INT4 DiT** | Community ConvRot TE (`Merserk`, layer-stream) + pruned INT4 DiT full-load (~10.8GB), sage flash, INT4 Metal kernel off | 2-step **done.** TE resident **2.6GB**, encode **34s**. DiT **10808 MB**. **143s / ~164s**, avg **154s/it**. Faster than INT8 stream (~217s) because DiT is resident. 20-step running. |
 
 ### What failed (do not retry)
 
@@ -117,8 +118,8 @@ All timings below are **864×480, 5s (124 frames), seed 42**, unless noted. Offi
 
 ### In progress / next
 
-- **INT4 32B TE + INT4 DiT:** `queue_t2v_int4_te_dit.py`. TE is community ConvRot (`Merserk`, 14952506624 bytes) with the same layer-stream hook as INT8. DiT full-loads (~10.8 GB); auto block-stream stays INT8-only. INT4 Metal kernel stays off (attempt 9). Header smoke passed (50 layers, ~233 MB/layer). Comfy 2-step encode+sample next.
-- **LightX2V 8-step Turbo LoRA** is on disk (`models/loras/`). Not inserted into the queue graph yet. Expected: 20 steps → 8, ~1h12 → ~25–30 min if step time stays ~215s.
+- **INT4 32B TE + INT4 DiT 20-step** is running (`queue_t2v_int4_te_dit.py`, prompt `5a1bc3ba`). 2-step already succeeded (~154s/step). Do not kill tmux `minimax-comfy-int4-te`.
+- **LightX2V 8-step Turbo LoRA** is on disk (`models/loras/`). Not inserted into the queue graph yet. On this INT4 path, 8 × ~154s ≈ 20 min if step time holds.
 - INT4 Metal kernel (`ASFP8_INT4_EXT=1`) is a step-time experiment on the INT4 path only; it does not change the 24GB residency story.
 
 ## 💡 Future Optimizations (Speeding it up)
