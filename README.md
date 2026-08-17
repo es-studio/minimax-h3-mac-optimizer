@@ -29,6 +29,10 @@ We successfully run a **47GB pipeline** on a **24GB M5 Mac** with zero swap thra
 - PyTorch's MPS backend natively lacks support for some INT8 and FP8 operations, which normally forces a catastrophic fallback to the CPU.
 - We utilize the `ComfyUI-AppleSilicon-FP8` custom node to inject **Bit-exact W8A8 Metal Kernels** and **W4A16 Fast Paths**. This forces all INT8/INT4 math to run natively on the Apple GPU, achieving >70% GPU utilization with almost 0% CPU bottleneck.
 
+### 5. Sage Attention → Metal Flash (mtlflashattn)
+- CUDA SageAttention cannot run on Apple Silicon. `./start.sh` enables ComfyUI `--use-sage-attention` via a small `vendor/sageattention` shim that calls `F.scaled_dot_product_attention` at runtime.
+- AppleSilicon-FP8 then routes that SDPA call to **mtlflashattn** (online softmax, no Lq×Lk score matrix). Without the flag, Comfy stays on sub-quadratic attention and never hits the Metal flash kernels. MiniMax H3 at 864×480 / 5s is ~15k packed tokens with head_dim 128.
+
 ---
 
 ## 🚀 Quick Start Guide

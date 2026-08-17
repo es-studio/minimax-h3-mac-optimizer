@@ -48,6 +48,15 @@ export MINIMAX_TE_BLOCK_STREAM="${MINIMAX_TE_BLOCK_STREAM:-auto}"
 export MINIMAX_TE_BLOCK_PREFETCH="${MINIMAX_TE_BLOCK_PREFETCH:-1}"
 echo "MINIMAX_TE_BLOCK_STREAM=${MINIMAX_TE_BLOCK_STREAM} prefetch=${MINIMAX_TE_BLOCK_PREFETCH}"
 
+# CUDA SageAttention cannot install on Mac. vendor/sageattention exposes the
+# sageattn() API Comfy imports for --use-sage-attention, then calls F.sdpa at
+# runtime so AppleSilicon-FP8 mtlflashattn actually runs. Without this flag
+# Comfy stays on sub-quadratic attention and never hits the Metal flash path.
+# PYTHONPATH must be set before python starts (attention.py imports sageattn
+# at module load, before custom nodes).
+export PYTHONPATH="$ROOT/vendor${PYTHONPATH:+:$PYTHONPATH}"
+echo "attention: --use-sage-attention via vendor/sageattention (mtlflashattn SDPA)"
+
 # 24GB unified memory: one model family at a time.
 # ComfyUI --fast-disk is DynamicVRAM/aimdo (CUDA/ROCm only). On Mac the
 # minimax_sequential_offload node drops modules after use and reloads from
@@ -61,4 +70,5 @@ exec ./venv/bin/python main.py \
   --disable-smart-memory \
   --fast-disk \
   --cache-none \
-  --reserve-vram 2
+  --reserve-vram 2 \
+  --use-sage-attention

@@ -28,6 +28,10 @@ NVIDIA 24GB VRAM 환경에서도 OOM(Out of Memory)이 발생하는 47GB 규모�
 - PyTorch MPS의 한계로 인해 INT8 연산이 CPU로 튕겨나가는 현상을 막기 위해 `ComfyUI-AppleSilicon-FP8` 커스텀 노드를 사용했습니다.
 - M5 GPU의 Metal 전용 INT8 커널(W8A8)과 W4A16 Fast Path를 강제로 활성화하여, CPU 개입 없이 GPU 사용률을 70% 이상으로 유지하며 네이티브 하드웨어 가속을 100% 끌어냅니다.
 
+### 5. Sage Attention → Metal Flash (mtlflashattn)
+- CUDA SageAttention은 Apple Silicon에서 동작하지 않습니다. `./start.sh` 가 ComfyUI `--use-sage-attention` 을 켜고, `vendor/sageattention` 심이 런타임에 `F.scaled_dot_product_attention` 으로 넘깁니다.
+- AppleSilicon-FP8 이 그 SDPA 호출을 **mtlflashattn**(온라인 소프트맥스, Lq×Lk 점수 행렬 없음)으로 라우팅합니다. 플래그가 없으면 Comfy는 sub-quadratic attention에 머물고 Metal flash가 DiT에 타지 않습니다. 864×480 5초 기준 packed 토큰은 약 1.5만, head_dim 128입니다.
+
 ---
 
 ## 🚀 빠른 시작 (Quick Start)

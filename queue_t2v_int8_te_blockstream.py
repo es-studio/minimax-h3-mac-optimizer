@@ -8,6 +8,7 @@ fast-disk hook drops the whole TE before DiT sampling.
 from __future__ import annotations
 
 import json
+import os
 import time
 import urllib.request
 from pathlib import Path
@@ -16,6 +17,7 @@ SERVER = "http://127.0.0.1:8188"
 OUT = Path("/Users/eunsung/minimax/t2v_int8_te_blockstream.json")
 DIT = "minimax_h3_fl2va_pruned_int8_convrot.safetensors"
 TE = "qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
+STEPS = int(os.environ.get("MINIMAX_SAMPLER_STEPS", "20"))
 
 PROMPT_TEXT = (
     "Cinematic widescreen shot of a quiet rainy city street at dusk, "
@@ -63,7 +65,7 @@ prompt = {
     "17": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "res_multistep"}},
     "9": {
         "class_type": "BasicScheduler",
-        "inputs": {"model": ["6", 0], "scheduler": "simple", "steps": 20, "denoise": 1.0},
+        "inputs": {"model": ["6", 0], "scheduler": "simple", "steps": STEPS, "denoise": 1.0},
     },
     "16": {
         "class_type": "BasicGuider",
@@ -126,7 +128,7 @@ def main() -> None:
                 "prompt_id": queued["prompt_id"],
                 "queued_at": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "start_epoch": time.time(),
-                "settings": "T2V 864x480 5s 20steps INT8 32B TE layer-stream + INT8 DiT block-stream",
+                "settings": f"T2V 864x480 5s {STEPS}steps INT8 32B TE layer-stream + INT8 DiT block-stream",
                 "dit": DIT,
                 "te": TE,
                 "node_errors": queued.get("node_errors") or {},
